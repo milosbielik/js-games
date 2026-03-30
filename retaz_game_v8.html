@@ -1,0 +1,395 @@
+
+<style>
+  :root {
+    --color-background-primary: light-dark(rgba(255, 255, 255, 1), rgba(48, 48, 46, 1));
+--color-text-primary: light-dark(rgba(20, 20, 19, 1), rgba(250, 249, 245, 1));
+--color-border-secondary: light-dark(rgba(1, 3, 29, 0.15), rgba(222, 220, 209, 0.15));
+--color-border-tertiary: light-dark(rgba(31, 30, 29, 0.15), rgba(222, 220, 209, 0.15));
+--border-radius-md: 8px;
+  }
+
+  button{
+    padding: 8px 16px;
+font-size: 14px;
+background: transparent;
+color: var(--color-text-primary);
+border: 0.5px solid var(--color-border-secondary);
+border-radius: var(--border-radius-md);
+cursor: pointer;
+transition: background 0.15s,
+transform 0.1s;
+  }
+* { box-sizing: border-box; margin: 0; padding: 0; }
+#game-wrap { padding: 1rem 0; max-width: 440px; margin: 0 auto; }
+#setup { padding: 0.5rem 0 1rem; }
+.setup-title { font-size: 15px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 14px; text-align: center; }
+.option-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+.option-label { font-size: 12px; color: var(--color-text-secondary); margin-bottom: 2px; }
+.toggle-group { display: flex; gap: 6px; }
+.tog { flex: 1; padding: 9px 6px; border-radius: var(--border-radius-md); border: 1.5px solid var(--color-border-tertiary); background: var(--color-background-primary); font-size: 13px; color: var(--color-text-secondary); cursor: pointer; text-align: center; transition: all 0.12s; }
+.tog.active { background: #EEEDFE; border-color: #7F77DD; color: #3C3489; font-weight: 500; }
+#btn-start { width: 100%; padding: 11px; border-radius: var(--border-radius-md); border: 1.5px solid #7F77DD; background: #EEEDFE; color: #3C3489; font-size: 15px; font-weight: 500; cursor: pointer; margin-top: 4px; }
+#btn-start:hover { background: #AFA9EC; }
+#game { display: none; }
+#hud { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.stat { background: var(--color-background-secondary); border-radius: var(--border-radius-md); padding: 8px 12px; text-align: center; min-width: 68px; }
+.stat-label { font-size: 11px; color: var(--color-text-secondary); }
+.stat-val { font-size: 22px; font-weight: 500; color: var(--color-text-primary); }
+.stat-val.warn { color: #A32D2D; }
+#variant-badges { display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; }
+.badge { font-size: 11px; padding: 3px 9px; border-radius: var(--border-radius-md); background: #EEEDFE; color: #534AB7; border: 1px solid #AFA9EC; }
+#grid-wrap { position: relative; margin-bottom: 14px; }
+#grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; }
+#arrow-svg { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+.cell { aspect-ratio: 1; border-radius: 36px; border: 1.5px solid var(--color-border-tertiary); background: var(--color-background-primary); display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 500; color: var(--color-text-primary); cursor: pointer; user-select: none; transition: background 0.1s, border-color 0.1s, transform 0.08s; -webkit-tap-highlight-color: transparent; }
+.cell:hover { border-color: var(--color-border-secondary); }
+.cell.selected { background: #AFA9EC; border-color: #7F77DD; color: #3C3489; transform: scale(1.08); }
+.cell.chain { background: #EEEDFE ; border-color: #534AB7; color: #26215C; }
+.cell.invalid { background: #FCEBEB; border-color: #E24B4A; color: #791F1F; }
+.cell.cleared { background: #E1F5EE; border-color: #1D9E75; color: #085041; transform: scale(1.1); }
+.cell.empty { background: var(--color-background-secondary); border: 1.5px dashed var(--color-border-tertiary); cursor: default; }
+.cell.dead { background: var(--color-background-secondary); color: var(--color-text-secondary); cursor: default; opacity: 0.4; }
+#msg { min-height: 28px; text-align: center; font-size: 14px; color: var(--color-text-secondary); margin-bottom: 10px; }
+#msg.good { color: #0F6E56; font-weight: 500; }
+#msg.bad { color: #A32D2D; }
+#controls { display: flex; gap: 8px; justify-content: center; }
+#info { margin-top: 14px; font-size: 12px; color: var(--color-text-secondary); text-align: center; line-height: 1.7; }
+#gameover { display: none; text-align: center; padding: 2rem 1rem; }
+#gameover h2 { font-size: 22px; font-weight: 500; color: var(--color-text-primary); margin-bottom: 8px; }
+#gameover .final-score { font-size: 48px; font-weight: 500; color: #534AB7; margin: 12px 0; }
+#gameover .sub { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 20px; }
+#gameover button { padding: 10px 28px; border-radius: var(--border-radius-md); border: 1.5px solid #7F77DD; background: #EEEDFE; color: #3C3489; font-size: 14px; font-weight: 500; cursor: pointer; }
+</style>
+
+<div id="game-wrap">
+  <div id="setup">
+    <div class="setup-title">Nastav varianty hry</div>
+    <div class="option-row">
+      <div class="option-label">Pohyb</div>
+      <div class="toggle-group">
+        <div class="tog active" id="tog-diag-off" onclick="setOpt('diag',false)">Po riadkoch a stĺpcoch</div>
+        <div class="tog" id="tog-diag-on" onclick="setOpt('diag',true)">Po uhlopriečkach</div>
+      </div>
+    </div>
+    <div class="option-row">
+      <div class="option-label">Smer reťaze</div>
+      <div class="toggle-group">
+        <div class="tog active" id="tog-dir-fixed" onclick="setOpt('dir',false)">V jednom smere</div>
+        <div class="tog" id="tog-dir-free" onclick="setOpt('dir',true)">Voľný — môže sa meniť</div>
+      </div>
+    </div>
+    <div class="option-row">
+      <div class="option-label">Počet kôl</div>
+      <div class="toggle-group">
+        <div class="tog active" id="tog-r5"  onclick="setOpt('rounds',5)">5</div>
+        <div class="tog" id="tog-r10" onclick="setOpt('rounds',10)">10</div>
+        <div class="tog" id="tog-r20" onclick="setOpt('rounds',20)">20</div>
+        <div class="tog" id="tog-r0"  onclick="setOpt('rounds',0)">Endless</div>
+      </div>
+    </div>
+    <button id="btn-start" onclick="startGame()">Začať hru</button>
+  </div>
+
+  <div id="game">
+    <div id="hud">
+      <div class="stat"><div class="stat-label">Skóre</div><div class="stat-val" id="score">0</div></div>
+      <div class="stat"><div class="stat-label">Reťaz</div><div class="stat-val" id="chain-len">0</div></div>
+      <div class="stat" id="stat-rounds" style="display:none"><div class="stat-label">Kolá</div><div class="stat-val" id="rounds-left">—</div></div>
+      <div class="stat" id="stat-round-cur" style="display:none"><div class="stat-label">Kolo</div><div class="stat-val" id="round-cur">1</div></div>
+    </div>
+    <div id="variant-badges"></div>
+    <div id="grid-wrap">
+      <div id="grid"></div>
+      <svg id="arrow-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <div id="msg"></div>
+    <div id="controls">
+      <button id="btn-confirm" style="display:none" onclick="confirmChain()">Potvrdiť reťaz</button>
+      <button onclick="backToSetup()">Zmeniť varianty</button>
+    </div>
+    <div id="info"></div>
+  </div>
+
+  <div id="gameover">
+    <h2 id="go-title">Koniec hry</h2>
+    <div class="final-score" id="go-score">0</div>
+    <div class="sub" id="go-sub"></div>
+    <button onclick="backToSetup()">Hrať znovu</button>
+  </div>
+</div>
+
+<script>
+const COLS = 6, ROWS = 6;
+let grid = [], chain = [], score = 0, roundNum = 1, direction = null;
+let optDiag = false, optFreeDir = false, optRounds = 5;
+let cellEls = [], gameActive = false;
+
+function setOpt(key, val) {
+  if (key === 'diag') {
+    optDiag = val;
+    document.getElementById('tog-diag-off').className = 'tog' + (val ? '' : ' active');
+    document.getElementById('tog-diag-on').className = 'tog' + (val ? ' active' : '');
+  } else if (key === 'dir') {
+    optFreeDir = val;
+    document.getElementById('tog-dir-fixed').className = 'tog' + (val ? '' : ' active');
+    document.getElementById('tog-dir-free').className = 'tog' + (val ? ' active' : '');
+  } else if (key === 'rounds') {
+    optRounds = val;
+    ['5','10','20','0'].forEach(v => {
+      document.getElementById('tog-r'+v).className = 'tog' + (val == v ? ' active' : '');
+    });
+  }
+}
+
+function startGame() {
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('gameover').style.display = 'none';
+  document.getElementById('game').style.display = 'block';
+
+  const isEndless = optRounds === 0;
+  const badges = [
+    optDiag ? '8 smerov' : '4 smery',
+    optFreeDir ? 'Smer voľný' : 'Smer pevný',
+    isEndless ? 'Endless' : `${optRounds} kôl`
+  ];
+  document.getElementById('variant-badges').innerHTML = badges.map(b => `<div class="badge">${b}</div>`).join('');
+  document.getElementById('info').innerHTML =
+    `Spájaj susediace čísla${optDiag ? ' (aj uhlopriečne)' : ''} — rozdiel musí byť vždy 1.<br>` +
+    (optFreeDir ? 'Smer reťaze sa môže meniť.' : 'Smer reťaze sa nesmie zmeniť.') +
+    '<br>Klikni na poslednú bunku pre odobratie ťahu.';
+
+  if (isEndless) {
+    document.getElementById('stat-rounds').style.display = 'none';
+    document.getElementById('stat-round-cur').style.display = '';
+  } else {
+    document.getElementById('stat-rounds').style.display = '';
+    document.getElementById('stat-round-cur').style.display = 'none';
+  }
+
+  score = 0; roundNum = 1; chain = []; direction = null; gameActive = true;
+  fillGrid(); render(); updateHUD();
+  setMsg('Klikni na číslo a začni reťaz.', '');
+}
+
+function backToSetup() {
+  gameActive = false;
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('gameover').style.display = 'none';
+  document.getElementById('setup').style.display = 'block';
+  document.getElementById('btn-confirm').style.display = 'none';
+}
+
+function fillGrid() {
+  grid = [];
+  for (let i = 0; i < ROWS * COLS; i++) grid.push(Math.floor(Math.random() * 9) + 1);
+}
+
+function idx(r, c) { return r * COLS + c; }
+function pos(i) { return { r: Math.floor(i / COLS), c: i % COLS }; }
+
+function neighbors(i) {
+  const { r, c } = pos(i);
+  const n = [];
+  for (let dr = -1; dr <= 1; dr++)
+    for (let dc = -1; dc <= 1; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      if (!optDiag && Math.abs(dr) + Math.abs(dc) > 1) continue;
+      const nr = r + dr, nc = c + dc;
+      if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS) n.push(idx(nr, nc));
+    }
+  return n;
+}
+
+function getCellCenter(i) {
+  const el = cellEls[i];
+  if (!el) return null;
+  const wrap = document.getElementById('grid-wrap').getBoundingClientRect();
+  const r = el.getBoundingClientRect();
+  return { x: r.left - wrap.left + r.width / 2, y: r.top - wrap.top + r.height / 2, w: r.width };
+}
+
+function drawArrows() {
+  const svg = document.getElementById('arrow-svg');
+  svg.innerHTML = '';
+  if (chain.length < 2) return;
+  const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+  defs.innerHTML = `
+    <marker id="ah" markerWidth="7" markerHeight="7" viewBox="0 0 10 10" refX="9" refY="5" orient="auto"><path d="M0,1 L10,5 L0,9 L4,5 Z" fill="#3C3489"/></marker>
+    <marker id="ah-last" markerWidth="8" markerHeight="8" viewBox="0 0 10 10" refX="9" refY="5" orient="auto"><path d="M0,1 L10,5 L0,9 Z" fill="#7F77DD"/></marker>`;
+  svg.appendChild(defs);
+  for (let k = 0; k < chain.length - 1; k++) {
+    const a = getCellCenter(chain[k]), b = getCellCenter(chain[k+1]);
+    if (!a || !b) continue;
+    const isLast = k === chain.length - 2;
+    const dx = b.x-a.x, dy = b.y-a.y, len = Math.sqrt(dx*dx+dy*dy);
+    const ux = dx/len, uy = dy/len, inset = a.w*0.2;
+    const x1=a.x+ux*inset, y1=a.y+uy*inset, x2=b.x-ux*inset, y2=b.y-uy*inset;
+    const stroke = isLast ? '#7F77DD' : '#3C3489';
+    const sw = '2';
+    /*const bg = document.createElementNS('http://www.w3.org/2000/svg','line');
+    bg.setAttribute('x1',x1);bg.setAttribute('y1',y1);bg.setAttribute('x2',x2);bg.setAttribute('y2',y2);
+    bg.setAttribute('stroke','white');bg.setAttribute('stroke-width',parseFloat(sw)+3);bg.setAttribute('stroke-opacity','0.85');
+    svg.appendChild(bg);*/
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1',x1);line.setAttribute('y1',y1);line.setAttribute('x2',x2);line.setAttribute('y2',y2);
+    line.setAttribute('stroke',stroke);line.setAttribute('stroke-width',sw);
+    line.setAttribute('marker-end','url(#ah)');
+    svg.appendChild(line);
+    /* const mx=(x1+x2)/2-uy*11, my=(y1+y2)/2+ux*11;
+    const nb=document.createElementNS('http://www.w3.org/2000/svg','circle');
+    nb.setAttribute('cx',mx);nb.setAttribute('cy',my);nb.setAttribute('r','8');nb.setAttribute('fill','white');nb.setAttribute('opacity','0.85');
+    svg.appendChild(nb); 
+    const nt=document.createElementNS('http://www.w3.org/2000/svg','text');
+    nt.setAttribute('x',mx);nt.setAttribute('y',my);nt.setAttribute('text-anchor','middle');nt.setAttribute('dominant-baseline','central');
+    nt.setAttribute('font-size','10');nt.setAttribute('font-weight','500');nt.setAttribute('fill',stroke);
+    nt.textContent=k+1; svg.appendChild(nt);*/
+  }
+}
+
+function render(flash) {
+  const g = document.getElementById('grid');
+  g.innerHTML = ''; cellEls = [];
+  for (let i = 0; i < ROWS*COLS; i++) {
+    const cell = document.createElement('div');
+    if (grid[i] === 0) { cell.className='cell empty'; g.appendChild(cell); cellEls.push(cell); continue; }
+    cell.className = 'cell';
+    cell.textContent = grid[i];
+    if (flash && flash.cleared && flash.cleared.includes(i)) cell.className='cell cleared';
+    else if (flash && flash.invalid && flash.invalid.includes(i)) cell.className='cell invalid';
+    else if (chain.length > 0 && chain[chain.length-1]===i) cell.className='cell selected';
+    else if (chain.includes(i)) cell.className='cell chain';
+    cell.onclick = () => handleClick(i);
+    g.appendChild(cell); cellEls.push(cell);
+  }
+  requestAnimationFrame(drawArrows);
+}
+
+function handleClick(i) {
+  if (!gameActive || grid[i] === 0) return;
+  const last = chain.length > 0 ? chain[chain.length-1] : -1;
+  if (chain.length === 0) {
+    chain=[i]; direction=null; render();
+    setMsg('Vyber susediace číslo (+1 alebo -1).','');
+    showConfirm(true); return;
+  }
+  if (i === last) {
+    chain.pop();
+    if (chain.length === 0) { direction=null; showConfirm(false); setMsg('Reťaz zrušená. Začni odznova.',''); }
+    else {
+      if (!optFreeDir) direction = chain.length<2 ? null : (grid[chain[chain.length-1]]>grid[chain[chain.length-2]]?'up':'down');
+      setMsg('Posledné číslo odobrané.','');
+    }
+    render(); updateHUD(); return;
+  }
+  if (chain.includes(i)) { flashInvalid([i]); setMsg('Toto číslo je už v reťazi.','bad'); return; }
+  if (!neighbors(last).includes(i)) { flashInvalid([i]); setMsg('Čísla musia byť vedľa seba!','bad'); return; }
+  const diff = grid[i]-grid[last];
+  if (diff!==1 && diff!==-1) { flashInvalid([i]); setMsg('Rozdiel musí byť presne 1.','bad'); return; }
+  if (!optFreeDir) {
+    const newDir = diff===1?'up':'down';
+    if (direction && newDir!==direction) { flashInvalid([i]); setMsg('Smer reťaze sa nemôže zmeniť!','bad'); return; }
+    direction = newDir;
+  }
+  chain.push(i); render();
+  const len = chain.length;
+  if (len>=3) setMsg(`Reťaz: ${len} čísiel — môžeš potvrdiť!`,'good');
+  else setMsg(`Pridaj ešte ${3-len} číslo.`,'');
+  updateHUD();
+}
+
+function confirmChain() {
+  if (chain.length < 2) { setMsg('Reťaz musí mať aspoň 2 čísla.','bad'); return; }
+  const pts = chain.length * chain.length * 10;
+  score += pts;
+  const cleared = [...chain];
+  render({ cleared });
+
+  setTimeout(() => {
+    cleared.forEach(i => { grid[i]=0; });
+    dropCells(); refill();
+    chain=[]; direction=null; roundNum++;
+    updateHUD(); render();
+    setMsg(`+${pts} bodov! Pokračuj.`,'good');
+    showConfirm(false);
+
+    const isEndless = optRounds === 0;
+    const roundsLeft = isEndless ? Infinity : optRounds - roundNum + 1;
+
+    if (!isEndless && roundNum > optRounds) {
+      setTimeout(() => endGame('rounds'), 400);
+      return;
+    }
+
+    setTimeout(() => {
+      if (isStuck()) {
+        setMsg('Žiadny možný ťah — koniec hry!','bad');
+        setTimeout(() => endGame('stuck'), 800);
+      }
+    }, 200);
+  }, 450);
+}
+
+function endGame(reason) {
+  gameActive = false;
+  document.getElementById('game').style.display = 'none';
+  document.getElementById('gameover').style.display = 'block';
+  document.getElementById('go-score').textContent = score;
+  document.getElementById('go-title').textContent = reason === 'stuck' ? 'Žiadny možný ťah!' : 'Koniec hry!';
+  document.getElementById('go-sub').textContent =
+    reason === 'stuck'
+      ? `Skóre po ${roundNum-1} kolách`
+      : `Skóre po ${optRounds} kolách`;
+}
+
+function dropCells() {
+  for (let c=0;c<COLS;c++) {
+    let col=[];
+    for (let r=0;r<ROWS;r++) { if (grid[idx(r,c)]!==0) col.push(grid[idx(r,c)]); }
+    while (col.length<ROWS) col.unshift(0);
+    for (let r=0;r<ROWS;r++) grid[idx(r,c)]=col[r];
+  }
+}
+
+function refill() {
+  for (let i=0;i<ROWS*COLS;i++) if (grid[i]===0) grid[i]=Math.floor(Math.random()*9)+1;
+}
+
+function showConfirm(show) {
+  document.getElementById('btn-confirm').style.display = show?'':'none';
+}
+
+function flashInvalid(idxs) {
+  render({ invalid: idxs });
+  setTimeout(()=>render(), 350);
+}
+
+function setMsg(txt, cls) {
+  const el = document.getElementById('msg');
+  el.textContent=txt; el.className=cls||'';
+}
+
+function updateHUD() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('chain-len').textContent = chain.length;
+  const isEndless = optRounds === 0;
+  if (isEndless) {
+    document.getElementById('round-cur').textContent = roundNum;
+  } else {
+    const left = optRounds - roundNum + 1;
+    const el = document.getElementById('rounds-left');
+    el.textContent = left;
+    el.className = 'stat-val' + (left <= 2 ? ' warn' : '');
+  }
+}
+
+function isStuck() {
+  for (let i=0;i<ROWS*COLS;i++) {
+    if (grid[i]===0) continue;
+    for (const nb of neighbors(i))
+      if (grid[nb]!==0 && Math.abs(grid[nb]-grid[i])===1) return false;
+  }
+  return true;
+}
+
+window.addEventListener('resize', drawArrows);
+</script>
