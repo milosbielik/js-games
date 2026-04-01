@@ -1,11 +1,13 @@
 # js-games
 
-## Retaz Game
+## NumaChains
 
-Na začiatku hry **Retaz** si môžeš zvoliť kombináciu dvoch variant hry nezávisle od seba — Phyb / Smer - to dáva dokopy 4 rôzne režimy hry, od klasickej po najvoľnejšiu.
+EN
 
-Môžeš si vybrať počet kôl — 5, 10, 20, alebo Endless. Počas hry vidíš, koľko kôl ti zostáva, a keď zostanú 2 kolá, číslo sa zčervená ako varovanie. Po vyčerpaní kôl (alebo ak nie je žiadny možný ťah) hra skončí a zobrazí sa obrazovka s finálnym skóre a možnosťou hrať znovu.
+In this simple game **NumaChains**, you can choose a combination of multiple settings at the beginning - this gives you countless different game variations, from simple classic to sophisticated and extreme.
 
-branch
+SK
 
-tu bude doplnený popis
+V tejto jednoduchej hre **NumaChains** si môžeš na začiatku zvoliť kombináciu viacerých nastavení  - to dáva dokopy bezpočet rôznych variant hry, od jednoduchej klasickej až po sofistikovanú a extrémnu.
+
+ 
